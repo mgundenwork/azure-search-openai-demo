@@ -1,6 +1,6 @@
 const BACKEND_URI = "";
 
-import { ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, Config, SimpleAPIResponse } from "./models";
+import { ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, Config, SimpleAPIResponse,SearchRequest, SearchResult  } from "./models";
 import { useLogin, appServicesToken } from "../authConfig";
 
 export function getHeaders(idToken: string | undefined): Record<string, string> {
@@ -13,6 +13,8 @@ export function getHeaders(idToken: string | undefined): Record<string, string> 
 
     return {};
 }
+
+
 
 export async function configApi(): Promise<Config> {
     const response = await fetch(`${BACKEND_URI}/config`, {
@@ -49,6 +51,23 @@ export async function chatApi(request: ChatAppRequest, shouldStream: boolean, id
     });
 }
 
+export async function searchApi(request: SearchRequest, idToken: string | undefined): Promise<SearchResult[]> {
+    const headers = { ...getHeaders(idToken), "Content-Type": "application/json" };
+    console.log("Search request headers:", Object.keys(headers)); // Log header keys for debugging
+
+    const response = await fetch(`${BACKEND_URI}/search`, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(request)
+    });
+
+    if (!response.ok) {
+        console.error("Search response not OK:", response.status, response.statusText);
+        throw new Error(`Search failed: ${response.statusText}`);
+    }
+
+    return await response.json();
+}
 export async function getSpeechApi(text: string): Promise<string | null> {
     return await fetch("/speech", {
         method: "POST",

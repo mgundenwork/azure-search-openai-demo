@@ -10,6 +10,7 @@ import "./index.css";
 
 import Layout from "./pages/layout/Layout";
 import Chat from "./pages/chat/Chat";
+import { Search } from "./pages/search/Search"; // Add this import
 
 var layout;
 if (useLogin) {
@@ -52,6 +53,10 @@ const router = createHashRouter([
             {
                 path: "qa",
                 lazy: () => import("./pages/ask/Ask")
+            },
+            {
+                path: "search", // Add this new route
+                element: <Search />
             },
             {
                 path: "*",

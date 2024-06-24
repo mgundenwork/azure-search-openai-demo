@@ -1,0 +1,87 @@
+.searchContainer {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+}
+
+.searchTopSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.searchBottomSection {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: flex-start;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.searchTitle {
+    font-size: 4rem;
+    font-weight: 600;
+    margin-top: 130px;
+}
+
+@media only screen and (max-width: 800px) {
+    .searchTitle {
+        font-size: 3rem;
+        font-weight: 600;
+        margin-top: 0;
+    }
+}
+
+.searchControls {
+    max-width: 800px;
+    width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.searchResults {
+    max-width: 800px;
+    width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-top: 20px;
+}
+
+.searchResult {
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.searchResult h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.searchResult p {
+    margin: 0;
+}
+
+.searchSettingsSeparator {
+    display: flex;
+    flex-direction: column;
+    margin-top: 15px;
+}
+
+.commandsContainer {
+    display: flex;
+    align-self: flex-end;
+}
+
+.commandButton {
+    margin-right: 20px;
+    margin-top: 20px;
+}

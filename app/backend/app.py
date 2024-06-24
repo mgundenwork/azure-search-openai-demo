@@ -49,6 +49,7 @@ from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
 from approaches.chatreadretrievereadvision import ChatReadRetrieveReadVisionApproach
 from approaches.retrievethenread import RetrieveThenReadApproach
 from approaches.retrievethenreadvision import RetrieveThenReadVisionApproach
+from approaches.searchapproach import SearchApproach  # Add this import
 from config import (
     CONFIG_ASK_APPROACH,
     CONFIG_ASK_VISION_APPROACH,
@@ -72,6 +73,7 @@ from config import (
     CONFIG_USER_BLOB_CONTAINER_CLIENT,
     CONFIG_USER_UPLOAD_ENABLED,
     CONFIG_VECTOR_SEARCH_ENABLED,
+    CONFIG_SEARCH_APPROACH
 )
 from core.authentication import AuthenticationHelper
 from decorators import authenticated, authenticated_path
@@ -180,6 +182,30 @@ async def ask(auth_claims: Dict[str, Any]):
     except Exception as error:
         return error_response(error, "/ask")
 
+@bp.route("/search", methods=["POST"])
+@authenticated
+async def search(auth_claims: Dict[str, Any]):
+    if not request.is_json:
+        return jsonify({"error": "request must be json"}), 415
+    request_json = await request.get_json()
+    
+    try:
+        approach: SearchApproach = current_app.config[CONFIG_SEARCH_APPROACH]
+        results = await approach.run(
+            messages=[{"role": "user", "content": request_json["query"]}],
+            context={
+                "overrides": {
+                    "retrieval_mode": request_json["searchType"],
+                    "semantic_ranker": request_json["useSemanticRanker"],
+                    "top": request_json["maxResults"],
+                    "minimum_search_score": request_json.get("minSimilarity"),
+                },
+                "auth_claims": auth_claims
+            }
+        )
+        return jsonify(results)
+    except Exception as error:
+        return error_response(error, "/search")
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, o):
@@ -582,6 +608,21 @@ async def setup_clients():
     )
 
     current_app.config[CONFIG_CHAT_APPROACH] = ChatReadRetrieveReadApproach(
+        search_client=search_client,
+        openai_client=openai_client,
+        auth_helper=auth_helper,
+        chatgpt_model=OPENAI_CHATGPT_MODEL,
+        chatgpt_deployment=AZURE_OPENAI_CHATGPT_DEPLOYMENT,
+        embedding_model=OPENAI_EMB_MODEL,
+        embedding_deployment=AZURE_OPENAI_EMB_DEPLOYMENT,
+        embedding_dimensions=OPENAI_EMB_DIMENSIONS,
+        sourcepage_field=KB_FIELDS_SOURCEPAGE,
+        content_field=KB_FIELDS_CONTENT,
+        query_language=AZURE_SEARCH_QUERY_LANGUAGE,
+        query_speller=AZURE_SEARCH_QUERY_SPELLER,
+    )
+    
+    current_app.config[CONFIG_SEARCH_APPROACH] = SearchApproach(
         search_client=search_client,
         openai_client=openai_client,
         auth_helper=auth_helper,

@@ -91,3 +91,17 @@ export type Config = {
 export type SimpleAPIResponse = {
     message?: string;
 };
+
+export type SearchRequest = {
+    query: string;
+    searchType: 'keyword' | 'vector' | 'hybrid';
+    useSemanticRanker: boolean;
+    maxResults: number;
+    minSimilarity?: number;
+};
+
+export type SearchResult = {
+    title: string;
+    content: string;
+    similarity?: number;
+};
