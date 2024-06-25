@@ -103,5 +103,20 @@ export type SearchRequest = {
 export type SearchResult = {
     title: string;
     content: string;
-    similarity?: number;
+    similarity: number;
+    sourcepage: string;
+    sourcefile: string;
+};
+
+export type SearchResponse = {
+    search_results: SearchResult[];
+    query: string;
+    search_parameters: {
+        use_text_search: boolean;
+        use_vector_search: boolean;
+        use_semantic_ranker: boolean;
+        use_semantic_captions: boolean;
+        top: number;
+        filter: string;
+    };
 };

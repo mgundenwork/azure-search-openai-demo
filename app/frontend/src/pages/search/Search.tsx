@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dropdown, IDropdownOption, TextField, PrimaryButton, Slider, Spinner } from '@fluentui/react';
-import { searchApi, SearchResult, SearchRequest } from '../../api';
+import { searchApi, SearchResult, SearchRequest, SearchResponse  } from '../../api';
 import { useLogin, getToken, isLoggedIn } from "../../authConfig";
 import { useMsal } from "@azure/msal-react";
 import styles from './Search.module.css';
@@ -49,18 +49,21 @@ export const Search: React.FC = () => {
         setError(null);
         try {
             const token = useLogin && client ? await getToken(client) : undefined;
-
+    
             const searchRequest: SearchRequest = {
                 query,
-                searchType: searchType as 'keyword' | 'vector' | 'hybrid',
+                searchType: searchType.toLowerCase() as 'keyword' | 'vector' | 'hybrid',
                 useSemanticRanker,
-                maxResults,
+                maxResults: Number(maxResults),  // Ensure this is a number
                 minSimilarity: searchType !== SearchType.Keyword ? minSimilarity : undefined
             };
-
+    
+            console.log("Search request:", searchRequest);
+    
             const searchResults = await searchApi(searchRequest, token);
             
             console.log("Search results:", searchResults);
+            
             if (Array.isArray(searchResults)) {
                 setResults(searchResults);
             } else {
@@ -103,7 +106,9 @@ export const Search: React.FC = () => {
                     label="Max Results"
                     type="number"
                     value={maxResults.toString()}
-                    onChange={(_, newValue) => setMaxResults(Number(newValue) || 5)}
+                    onChange={(_, newValue) => setMaxResults(Number(newValue) || 3)}
+                    min={1}
+                    max={500}  // You can adjust this maximum value as needed
                 />
                 {searchType !== SearchType.Keyword && (
                     <Slider

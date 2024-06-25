@@ -189,30 +189,27 @@ async def search(auth_claims: Dict[str, Any]):
         return jsonify({"error": "request must be json"}), 415
     request_json = await request.get_json()
     
+    logging.info(f"Received search request: {request_json}")
+    
     try:
         approach: SearchApproach = current_app.config[CONFIG_SEARCH_APPROACH]
         results = await approach.run(
             messages=[{"role": "user", "content": request_json["query"]}],
             context={
                 "overrides": {
-                    "retrieval_mode": request_json["searchType"],
-                    "semantic_ranker": request_json["useSemanticRanker"],
-                    "top": request_json["maxResults"],
+                    "retrieval_mode": request_json.get("searchType", "hybrid"),
+                    "semantic_ranker": request_json.get("useSemanticRanker", False),
+                    "top": request_json.get("maxResults", 3),  # Changed from "maxResults" to "top"
                     "minimum_search_score": request_json.get("minSimilarity"),
                 },
                 "auth_claims": auth_claims
             }
         )
+        logging.info(f"Search returned {len(results)} results")
         return jsonify(results)
     except Exception as error:
+        logging.exception(f"Error in /search: {str(error)}")
         return error_response(error, "/search")
-
-class JSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        if dataclasses.is_dataclass(o):
-            return dataclasses.asdict(o)
-        return super().default(o)
-
 
 async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str, None]:
     try:

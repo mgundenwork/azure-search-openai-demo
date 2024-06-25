@@ -1,6 +1,6 @@
 const BACKEND_URI = "";
 
-import { ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, Config, SimpleAPIResponse,SearchRequest, SearchResult  } from "./models";
+import { ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, Config, SimpleAPIResponse,SearchRequest, SearchResult, SearchResponse } from "./models";
 import { useLogin, appServicesToken } from "../authConfig";
 
 export function getHeaders(idToken: string | undefined): Record<string, string> {
@@ -53,7 +53,8 @@ export async function chatApi(request: ChatAppRequest, shouldStream: boolean, id
 
 export async function searchApi(request: SearchRequest, idToken: string | undefined): Promise<SearchResult[]> {
     const headers = { ...getHeaders(idToken), "Content-Type": "application/json" };
-    console.log("Search request headers:", Object.keys(headers)); // Log header keys for debugging
+    console.log("Search request headers:", headers);
+    console.log("Search request body:", JSON.stringify(request));
 
     const response = await fetch(`${BACKEND_URI}/search`, {
         method: "POST",
@@ -63,11 +64,22 @@ export async function searchApi(request: SearchRequest, idToken: string | undefi
 
     if (!response.ok) {
         console.error("Search response not OK:", response.status, response.statusText);
+        const errorText = await response.text();
+        console.error("Error response body:", errorText);
         throw new Error(`Search failed: ${response.statusText}`);
     }
 
-    return await response.json();
+    const results = await response.json();
+    console.log("Search results:", results);
+
+    if (!Array.isArray(results)) {
+        console.error("Unexpected search results format:", results);
+        throw new Error("Unexpected search results format");
+    }
+
+    return results;
 }
+
 export async function getSpeechApi(text: string): Promise<string | null> {
     return await fetch("/speech", {
         method: "POST",
