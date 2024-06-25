@@ -105,7 +105,10 @@ export async function getSpeechApi(text: string): Promise<string | null> {
 }
 
 export function getCitationFilePath(citation: string): string {
-    return `${BACKEND_URI}/content/${citation}`;
+    console.log("getCitationFilePath called with citation:", citation);
+    const path = `${BACKEND_URI}/content/${citation}`;
+    console.log("Returning citation path:", path);
+    return path;
 }
 
 export async function uploadFileApi(request: FormData, idToken: string): Promise<SimpleAPIResponse> {

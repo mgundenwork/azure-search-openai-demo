@@ -1,87 +1,85 @@
 .searchContainer {
     display: flex;
-    flex: 1;
     flex-direction: column;
-    align-items: center;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .searchTopSection {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
+    padding: 20px;
+    transition: all 0.3s ease;
 }
 
-.searchBottomSection {
-    display: flex;
-    flex: 1;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-content: flex-start;
-    width: 100%;
-    margin-top: 20px;
+.searchTopSection.collapsed {
+    padding: 10px;
 }
 
 .searchTitle {
-    font-size: 4rem;
-    font-weight: 600;
-    margin-top: 130px;
-}
-
-@media only screen and (max-width: 800px) {
-    .searchTitle {
-        font-size: 3rem;
-        font-weight: 600;
-        margin-top: 0;
-    }
+    font-size: 24px;
+    margin-bottom: 20px;
 }
 
 .searchControls {
-    max-width: 800px;
-    width: 100%;
-    padding-left: 10px;
-    padding-right: 10px;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.showSearchButton {
+    align-self: flex-start;
+}
+
+.searchBottomSection {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.searchBottomSection.withCitation {
+    flex-direction: row;
 }
 
 .searchResults {
-    max-width: 800px;
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.withCitation .searchResults {
+    flex: 1;
+    max-width: 33.33%;
+}
+
+.pdfViewerContainer {
+    flex: 2;
+    max-width: 66.67%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.pdfViewer {
     width: 100%;
-    padding-left: 10px;
-    padding-right: 10px;
-    margin-top: 20px;
+    height: 100%;
+    border: none;
 }
 
 .searchResult {
     background-color: #f0f0f0;
-    border-radius: 8px;
+    border-radius: 4px;
     padding: 15px;
     margin-bottom: 15px;
 }
 
-.searchResult h3 {
-    margin-top: 0;
+.errorMessage {
+    color: red;
     margin-bottom: 10px;
 }
 
-.searchResult p {
-    margin: 0;
-}
-
-.searchSettingsSeparator {
-    display: flex;
-    flex-direction: column;
-    margin-top: 15px;
-}
-
-.commandsContainer {
-    display: flex;
-    align-self: flex-end;
-}
-
-.commandButton {
-    margin-right: 20px;
-    margin-top: 20px;
+.contentToggle {
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
