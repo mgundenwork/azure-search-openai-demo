@@ -211,6 +211,12 @@ async def search(auth_claims: Dict[str, Any]):
         logging.exception(f"Error in /search: {str(error)}")
         return error_response(error, "/search")
 
+class JSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)
+        return super().default(o)
+
 async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str, None]:
     try:
         async for event in r:
