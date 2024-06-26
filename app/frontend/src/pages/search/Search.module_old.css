@@ -51,11 +51,12 @@
 
 .withCitation .searchResults {
     flex: 1;
-    max-width: 50%;
+    max-width: 33.33%;
 }
 
 .pdfViewerContainer {
-    flex: 1;
+    flex: 2;
+    max-width: 66.67%;
     height: 100%;
     overflow: hidden;
 }
@@ -73,69 +74,12 @@
     margin-bottom: 15px;
 }
 
-.citations {
-    margin-top: 10px;
-}
-
-.citation {
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    padding: 10px;
-    margin-top: 10px;
-}
-
-.contentToggle {
-    margin-top: 5px;
-}
-
 .errorMessage {
     color: red;
     margin-bottom: 10px;
 }
 
-.searchOptions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    background-color: #f9f9f9;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.searchOptions > * {
-    flex: 1;
-    margin-right: 10px;
-}
-
-.searchOptions > *:last-child {
-    margin-right: 0;
-}
-
-@media (max-width: 768px) {
-    .searchOptions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .searchOptions > * {
-        margin-right: 0;
-        margin-bottom: 10px;
-    }
-
-    .searchOptions > *:last-child {
-        margin-bottom: 0;
-    }
-
-    .withCitation .searchResults {
-        max-width: 100%;
-    }
-
-    .searchBottomSection.withCitation {
-        flex-direction: column;
-    }
-
-    .pdfViewerContainer {
-        height: 50vh;
-    }
+.contentToggle {
+    margin-top: 10px;
+    margin-bottom: 10px;
 }

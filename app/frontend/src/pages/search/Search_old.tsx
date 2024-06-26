@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { Dropdown, IDropdownOption, TextField, PrimaryButton, Spinner, IconButton, Checkbox, Toggle, Slider } from '@fluentui/react';
-import { searchApi } from '../../api';
-import { SearchResult, SearchRequest } from '../../api';
-import { useLogin, getToken, isLoggedIn } from "../../authConfig";
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Dropdown, TextField, PrimaryButton, Spinner, IconButton, Checkbox, Toggle } from '@fluentui/react';
+import { searchApi, SearchResult, SearchRequest } from '../../api';
+import { useLogin, getToken } from "../../authConfig";
 import { useMsal } from "@azure/msal-react";
+import { getCitationFilePath } from "../../api";
+//import { AnalysisPanelTabs } from "../../components/AnalysisPanel";
 import styles from './Search.module.css';
 
 enum SearchType {
@@ -12,56 +13,81 @@ enum SearchType {
     Hybrid = 'hybrid'
 }
 
-enum SortOption {
-    TotalMatches = 'totalMatches',
-    HighestScore = 'highestScore',
-    RerankerScore = 'rerankerScore'
-}
-
 interface GroupedResult {
     sourcepage: string;
     matches: SearchResult[];
-    highestScore: number;
-    highestRerankerScore: number;
 }
+
 
 export const Search: React.FC = () => {
     const [searchType, setSearchType] = useState<SearchType>(SearchType.Keyword);
     const [useSemanticRanker, setUseSemanticRanker] = useState<boolean>(false);
     const [maxResults, setMaxResults] = useState<number>(5);
-    const [vectorMinSimilarity, setVectorMinSimilarity] = useState<number>(0.7);
-    const [hybridMinSimilarity, setHybridMinSimilarity] = useState<number>(0);
-    const [minimumRerankerScore, setMinimumRerankerScore] = useState<number>(0);
+    const [minSimilarity, setMinSimilarity] = useState<number>(0.7);
     const [query, setQuery] = useState<string>('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    /*const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
+    const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);*/
     const [activeCitation, setActiveCitation] = useState<string | undefined>(undefined);
+    /*const [activeAnalysisPanelTab, setActiveAnalysisPanelTab] = useState<AnalysisPanelTabs | undefined>(undefined);*/
     const [isSearchBoxVisible, setIsSearchBoxVisible] = useState<boolean>(true);
+    const [searchInPdf, setSearchInPdf] = useState<string>('');
     const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
-    const [sortOption, setSortOption] = useState<SortOption>(SortOption.TotalMatches);
 
+    const pdfViewerRef = useRef<HTMLIFrameElement>(null);
     const client = useLogin ? useMsal().instance : undefined;
+
+   /* useEffect(() => {
+        const checkAuth = async () => {
+            if (useLogin && client) {
+                const loggedIn = isLoggedIn(client);
+                console.log("Is user logged in?", loggedIn);
+                setIsAuthenticated(loggedIn);
+            } else {
+                console.log("Login not used or client not available");
+                setIsAuthenticated(true); // Assume authenticated if login is not used
+            }
+        };
+        checkAuth();
+    }, [client]);*/
+
+    /*const searchTypeOptions: IDropdownOption[] = [
+        { key: SearchType.Keyword, text: 'Keyword Search' },
+        { key: SearchType.Vector, text: 'Vector Search' },
+        { key: SearchType.Hybrid, text: 'Hybrid Search' }
+    ];*/
 
     const handleSearch = async () => {
         setIsLoading(true);
         setError(null);
         try {
             const token = useLogin && client ? await getToken(client) : undefined;
+
             const searchRequest: SearchRequest = {
                 query,
                 searchType: searchType.toLowerCase() as 'keyword' | 'vector' | 'hybrid',
                 useSemanticRanker,
                 maxResults: Number(maxResults),
-                minSimilarity: searchType === SearchType.Vector ? vectorMinSimilarity : 
-                               searchType === SearchType.Hybrid ? hybridMinSimilarity : undefined,
-                minimum_reranker_score: useSemanticRanker ? minimumRerankerScore : undefined
+                minSimilarity: searchType !== SearchType.Keyword ? minSimilarity : undefined
             };
+
+            console.log("Search request:", JSON.stringify(searchRequest, null, 2));
+
             const searchResults = await searchApi(searchRequest, token);
+            
             console.log("Search results:", searchResults);
-            setResults(searchResults);
-            setIsSearchBoxVisible(false);
-            setExpandedDocs(new Set());
+            console.log("Number of results returned:", searchResults.length);
+            
+            if (Array.isArray(searchResults)) {
+                setResults(searchResults);
+            } else {
+                console.error("Unexpected search results format:", searchResults);
+                setError('Received unexpected search results format.');
+            }
+            setIsSearchBoxVisible(false);  // Hide search box after search
         } catch (error) {
             console.error('Search failed:', error);
             setError('An error occurred during the search. Please try again.');
@@ -69,11 +95,81 @@ export const Search: React.FC = () => {
             setIsLoading(false);
         }
     };
+    
+    /*const getCitation = (sourcepage: string): string => {
+        console.log("Getting citation for:", sourcepage);  // Log the input
+        const [path, ext] = sourcepage.split('.');
+        if (ext && ext.toLowerCase() === 'png') {
+            const pageIdx = path.lastIndexOf('-');
+            if (pageIdx !== -1) {
+                const pageNumber = parseInt(path.slice(pageIdx + 1), 10);
+                const result = `${path.slice(0, pageIdx)}.pdf#page=${pageNumber}`;
+                console.log("Resulting citation:", result);  // Log the result
+                return result;
+            }
+        }
+        console.log("Returning original sourcepage");  // Log when returning original
+        return sourcepage;
+    };*/
 
+    /*const extractPageNumber = (sourcepage: string): string => {
+        console.log("Extracting page number from:", sourcepage);  // Log the input
+        // Try to extract page number from filename (e.g., "document-name-123.pdf")
+        const fileNameMatch = sourcepage.match(/-(\d+)\.pdf$/);
+        if (fileNameMatch) {
+            console.log("Page number from filename:", fileNameMatch[1]);  // Log when found in filename
+            return fileNameMatch[1];
+        }
+
+        // If not found in filename, try to extract from citation format
+        const citation = getCitation(sourcepage);
+        const pageMatch = citation.match(/#page=(\d+)$/);
+        if (pageMatch) {
+            console.log("Page number from citation:", pageMatch[1]);  // Log when found in citation
+            return pageMatch[1];
+        }
+
+        console.log("Page number not found, returning N/A");  // Log when not found
+        return 'N/A';
+    };*/
+
+   /* const handleCitationClick = (sourcepage: string) => {
+        console.log("Citation click for:", sourcepage);  // Log the clicked sourcepage
+        const citation = getCitation(sourcepage);
+        const fullCitationPath = `/content/${citation}`;
+        console.log("Full citation path:", fullCitationPath);  // Log the full path
+        setActiveCitation(activeCitation === fullCitationPath ? undefined : fullCitationPath);
+    };*/
+    /*const handleCitationClick = (sourcepage: string, content: string) => {
+        // Take the first 10 words of the content to search in the PDF
+        const searchText = content.split(' ').slice(0, 10).join(' ');
+        // Encode the search text for use in a URL
+        const encodedSearchText = encodeURIComponent(searchText);
+        // Construct the PDF URL with the search parameter
+        const pdfUrl = `/content/${sourcepage}#search="${encodedSearchText}"`;
+        setActiveCitation(pdfUrl);
+    };*/
     const handleDocumentClick = (sourcepage: string) => {
         const pdfUrl = `/content/${sourcepage}`;
         setActiveCitation(pdfUrl);
     };
+
+    useEffect(() => {
+        if (activeCitation && searchInPdf && pdfViewerRef.current) {
+            // Give the PDF viewer some time to load before sending the search command
+            const timer = setTimeout(() => {
+                pdfViewerRef.current?.contentWindow?.postMessage({
+                    type: 'search',
+                    query: searchInPdf,
+                    caseSensitive: false,
+                    highlightAll: true,
+                    findPrevious: false
+                }, '*');
+            }, 10000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [activeCitation, searchInPdf]);
 
     const toggleDocExpansion = (sourcepage: string) => {
         setExpandedDocs(prev => {
@@ -91,84 +187,44 @@ export const Search: React.FC = () => {
         const groups: { [key: string]: GroupedResult } = {};
         results.forEach(result => {
             if (!groups[result.sourcepage]) {
-                groups[result.sourcepage] = { 
-                    sourcepage: result.sourcepage, 
-                    matches: [], 
-                    highestScore: 0,
-                    highestRerankerScore: 0
-                };
+                groups[result.sourcepage] = { sourcepage: result.sourcepage, matches: [] };
             }
             groups[result.sourcepage].matches.push(result);
-            groups[result.sourcepage].highestScore = Math.max(groups[result.sourcepage].highestScore, result.similarity);
-            groups[result.sourcepage].highestRerankerScore = Math.max(groups[result.sourcepage].highestRerankerScore, result.reranker_score || 0);
         });
-        let sortedGroups = Object.values(groups);
-        if (sortOption === SortOption.TotalMatches) {
-            sortedGroups.sort((a, b) => b.matches.length - a.matches.length);
-        } else if (sortOption === SortOption.HighestScore) {
-            sortedGroups.sort((a, b) => b.highestScore - a.highestScore);
-        } else if (sortOption === SortOption.RerankerScore) {
-            sortedGroups.sort((a, b) => b.highestRerankerScore - a.highestRerankerScore);
-        }
-        return sortedGroups;
-    }, [results, sortOption]);
+        return Object.values(groups).sort((a, b) => b.matches.length - a.matches.length);
+    }, [results]);
 
-    const handleExportCSV = () => {
-        const currentDate = new Date();
-        const formattedDate = currentDate.toLocaleDateString();
-        const formattedTime = currentDate.toLocaleTimeString();
-
-        const metadata = [
-            ['Search Query', query],
-            ['Search Type', searchType],
-            ['Semantic Ranker Used', useSemanticRanker ? 'Yes' : 'No'],
-            ['Max Results Requested', maxResults.toString()],
-            ['Search Date', formattedDate],
-            ['Search Time', formattedTime],
-            ['']  // Empty line for separation
-        ];
-
-        const headers = ['Document', 'Score'];
-        if (useSemanticRanker) {
-            headers.push('Reranker Score');
-        }
-        headers.push('Matching Chunk');
-
-        const csvContent = [
-            ...metadata,
-            headers,
-            ...results.map(result => {
-                const row = [
-                    result.sourcepage,
-                    result.similarity.toFixed(2)
-                ];
-                if (useSemanticRanker) {
-                    row.push((result.reranker_score !== undefined ? result.reranker_score.toFixed(2) : 'N/A'));
-                }
-                row.push(result.content);
-                return row;
-            })
-        ].map(row => row.map(cell => `"${(cell ?? '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        if (link.download !== undefined) {
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `search_results_${currentDate.toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    };
+    /*const renderSearchResults = () => {
+        return results.map((result, index) => (
+            <div key={index} className={styles.searchResult}>
+                <h3>{index + 1}. {result.title}</h3>
+                {result.sourcepage && (
+                    <p>Page: {extractPageNumber(result.sourcepage)} (Source: {result.sourcepage})</p>
+                )}
+                <p>Similarity: {result.similarity.toFixed(2)}</p>
+                <PrimaryButton onClick={() => handleCitationClick(result.sourcepage)}>View Document</PrimaryButton>
+                <div className={styles.contentToggle}>
+                    <Checkbox
+                        label="Show Content"
+                        onChange={(_, checked) => {
+                            const contentElement = document.getElementById(`content-${index}`);
+                            if (contentElement) {
+                                contentElement.style.display = checked ? 'block' : 'none';
+                            }
+                        }}
+                    />
+                </div>
+                <div id={`content-${index}`} style={{display: 'none'}}>
+                    <p>{result.content}</p>
+                </div>
+            </div>
+        ));
+    };*/
 
     const renderSearchResults = () => {
         return groupedResults.map((group, index) => (
             <div key={index} className={styles.searchResult}>
                 <h3>{index + 1}. {group.sourcepage} ({group.matches.length} matches)</h3>
-                <p>Highest Score: {group.highestScore.toFixed(2)}</p>
-                {useSemanticRanker && <p>Highest Reranker Score: {group.highestRerankerScore.toFixed(2)}</p>}
                 <PrimaryButton onClick={() => handleDocumentClick(group.sourcepage)}>
                     View Document
                 </PrimaryButton>
@@ -182,7 +238,6 @@ export const Search: React.FC = () => {
                         {group.matches.map((result, citationIndex) => (
                             <div key={citationIndex} className={styles.citation}>
                                 <p>Similarity: {result.similarity.toFixed(2)}</p>
-                                {useSemanticRanker && <p>Reranker Score: {(result.reranker_score || 0).toFixed(2)}</p>}
                                 <div className={styles.contentToggle}>
                                     <Checkbox
                                         label="Show Content"
@@ -231,46 +286,21 @@ export const Search: React.FC = () => {
                             checked={useSemanticRanker}
                             onChange={(_, checked) => setUseSemanticRanker(!!checked)}
                         />
-                        {useSemanticRanker && (
-                            <Slider
-                                label="Minimum Reranker Score"
-                                min={0}
-                                max={4}
-                                step={0.1}
-                                value={minimumRerankerScore}
-                                onChange={value => setMinimumRerankerScore(value)}
-                                showValue
-                                snapToStep
-                            />
-                        )}
                         <TextField
                             label="Max Results"
                             type="number"
                             value={maxResults.toString()}
                             onChange={(_, newValue) => setMaxResults(Number(newValue) || 5)}
                         />
-                        {searchType === SearchType.Vector && (
-                            <Slider
-                                label="Minimum Similarity (Vector)"
-                                min={0}
-                                max={1}
+                        {searchType !== SearchType.Keyword && (
+                            <TextField
+                                label="Minimum Similarity"
+                                type="number"
+                                value={minSimilarity.toString()}
+                                onChange={(_, newValue) => setMinSimilarity(Number(newValue) || 0.7)}
                                 step={0.1}
-                                value={vectorMinSimilarity}
-                                onChange={value => setVectorMinSimilarity(value)}
-                                showValue
-                                snapToStep
-                            />
-                        )}
-                        {searchType === SearchType.Hybrid && (
-                            <Slider
-                                label="Minimum Similarity (Hybrid)"
                                 min={0}
                                 max={1}
-                                step={0.01}
-                                value={hybridMinSimilarity}
-                                onChange={value => setHybridMinSimilarity(value)}
-                                showValue
-                                snapToStep
                             />
                         )}
                         <PrimaryButton text="Search" onClick={handleSearch} disabled={isLoading || !query.trim()} />
@@ -283,21 +313,6 @@ export const Search: React.FC = () => {
                         onClick={() => setIsSearchBoxVisible(true)}
                         className={styles.showSearchButton}
                     />
-                </div>
-            )}
-            {results.length > 0 && (
-                <div className={styles.searchOptions}>
-                    <Dropdown
-                        label="Sort by"
-                        selectedKey={sortOption}
-                        options={[
-                            { key: SortOption.TotalMatches, text: 'Total Matches' },
-                            { key: SortOption.HighestScore, text: 'Highest Score' },
-                            ...(useSemanticRanker ? [{ key: SortOption.RerankerScore, text: 'Reranker Score' }] : []),
-                        ]}
-                        onChange={(_, option) => option && setSortOption(option.key as SortOption)}
-                    />
-                    <PrimaryButton text="Export to CSV" onClick={handleExportCSV} />
                 </div>
             )}
             <div className={`${styles.searchBottomSection} ${activeCitation ? styles.withCitation : ''}`}>

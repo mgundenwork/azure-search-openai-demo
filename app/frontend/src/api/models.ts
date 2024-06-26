@@ -98,6 +98,7 @@ export type SearchRequest = {
     useSemanticRanker: boolean;
     maxResults: number;
     minSimilarity?: number;
+    minimum_reranker_score?: number;
 };
 
 export type SearchResult = {
@@ -106,6 +107,7 @@ export type SearchResult = {
     similarity: number;
     sourcepage: string;
     sourcefile: string;
+    reranker_score?: number;
 };
 
 export type SearchResponse = {

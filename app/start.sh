@@ -35,15 +35,20 @@ echo "Restoring frontend npm packages"
 echo ""
 
 cd app/frontend
-npm install
+
 if [ $? -ne 0 ]; then
     echo "Failed to restore frontend npm packages"
     exit $?
 fi
-
+npm install
 echo ""
 echo "Building frontend"
 echo ""
+if [ -d "dist" ]; then
+    echo "Removing existing build directory: dist"
+    rm -rf dist
+fi
+
 
 npm run build
 if [ $? -ne 0 ]; then
