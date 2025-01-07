@@ -1,7 +1,0 @@
-{
-  "active_provider": "claude.ai",
-  "active_organization_id": "f8a9ed5d-8e66-495a-af36-1212b2de733b",
-  "active_project_id": "ca76924e-b56a-430f-94a2-a07dc866f5de",
-  "active_project_name": "aisearch",
-  "local_path": "/workspaces/azure-search-openai-demo"
-}
