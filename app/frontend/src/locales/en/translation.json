@@ -34,13 +34,13 @@
     },
     "developerSettings": "Developer settings",
 
-    "chatEmptyStateTitle": "Chat with your data",
-    "chatEmptyStateSubtitle": "Ask anything or try an example",
+    "chatEmptyStateTitle": "Payment Card Database",
+    "chatEmptyStateSubtitle": "Chat with the Coherent Payment Card Database",
     "defaultExamples": {
-        "1": "What is included in my Northwind Health Plus plan that is not in standard?",
-        "2": "What happens in a performance review?",
-        "3": "What does a Product Manager do?",
-        "placeholder": "Type a new question (e.g. does my plan cover annual eye exams?)"
+        "1": "What are interchange fees?",
+        "2": "What is a scheme fee?",
+        "3": "Tell me about the history of Visa nd Mastercard?",
+        "placeholder": "Type a new question"
     },
     "askTitle": "Ask your data",
     "gpt4vExamples": {
